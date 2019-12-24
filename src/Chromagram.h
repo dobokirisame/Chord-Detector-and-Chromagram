@@ -1,38 +1,25 @@
-//=======================================================================
-/** @file Chromagram.h
- *  @brief Chromagram - a class for calculating the chromagram in real-time
- *  @author Adam Stark
- *  @copyright Copyright (C) 2008-2014  Queen Mary University of London
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-//=======================================================================
+#ifndef CHROMAGRAM_H
+#define CHROMAGRAM_H
 
-#ifndef __CHROMAGRAM_H
-#define __CHROMAGRAM_H
-
-#define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
-
-#ifdef USE_FFTW
-#include "fftw3.h"
-#endif
 
 #ifdef USE_KISS_FFT
 #include "kiss_fft.h"
 #endif
+#include <array>
+namespace {
+constexpr size_t kNotesCount(12);
+constexpr size_t kBufferSize(8192);
+constexpr size_t kHarmonicsCount(2);
+constexpr size_t kOctavesCount(2);
+constexpr size_t kBinsCount(2);
+constexpr double kRreferenceFrequency(130.81278265); // Note C3 MIDI number 48 Lenght 1mm
+std::array<double, 12> kNoteFrequencies;
+/**
+  http://us-satellite.net/nasa/endeavor/resources/mathdocs/Mathematics%20of%20SoundY.pdf
+*/
+} //namespace
 
 //=======================================================================
 /** A class for calculating a Chromagram from input audio
@@ -45,7 +32,7 @@ public:
      * @param frameSize the input audio frame size 
      * @param fs the sampling frequency
      */
-    Chromagram (int frameSize, int fs);
+    Chromagram (size_t frameSize, size_t mSamplingFrequency);
 
     /** Destructor */
     ~Chromagram();
@@ -69,12 +56,12 @@ public:
     /** Sets the input audio frame size
      * @param frameSize the input audio frame size
      */
-    void setInputAudioFrameSize (int frameSize);
+    void setInputAudioFrameSize (size_t frameSize);
     
     /** Set the sampling frequency of the input audio
      * @param fs the sampling frequency in Hz
      */
-    void setSamplingFrequency (int fs);
+    void setSamplingFrequency(size_t samplingFrequency);
     
     /** Set the interval at which the chromagram is calculated. As the algorithm requires
      * a significant amount of audio to be accumulated, it may be desirable to have the algorithm
@@ -94,7 +81,7 @@ public:
     bool isReady();
     
 private:
-    
+    void generateNoteFrequencies() const noexcept;
     void setupFFT();
     void calculateChromagram();
     void calculateMagnitudeSpectrum();
@@ -103,37 +90,21 @@ private:
     double round (double val);
     
     std::vector<double> window;
-    std::vector<double> buffer;
+    std::vector<double> mBuffer;
     std::vector<double> magnitudeSpectrum;
     std::vector<double> downsampledInputAudioFrame;
-    std::vector<double> chromagram;
-    
-    double referenceFrequency;
-    double noteFrequencies[12];
-    
-    int bufferSize;
-    int samplingFrequency;
-    int inputAudioFrameSize;
-    int downSampledAudioFrameSize;
-    int numHarmonics;
-	int numOctaves;
-	int numBinsToSearch;
-    int numSamplesSinceLastCalculation;
-    int chromaCalculationInterval;
-    bool chromaReady;
-
-#ifdef USE_FFTW
-    fftw_plan p;
-	fftw_complex* complexOut;
-    fftw_complex* complexIn;
-#endif
-    
+    std::vector<double> mChromagram;
+    size_t mInputAudioFrameSize;
+    size_t downSampledAudioFrameSize;
+    int mNumSamplesSinceLastCalculation;
+    int mChromaCalculationInterval;
+    bool mChromaReady;
+    size_t mSamplingFrequency;
 #ifdef USE_KISS_FFT
-    kiss_fft_cfg cfg;
-    kiss_fft_cpx* fftIn;
-    kiss_fft_cpx* fftOut;
+    kiss_fft_cfg mFftConfig;
+    std::array<kiss_fft_cpx, kBufferSize> mFftInputData;
+    std::array<kiss_fft_cpx, kBufferSize> mFftOutputData;
 #endif
-    
 };
 
-#endif /* defined(__CHROMAGRAM_H) */
+#endif
