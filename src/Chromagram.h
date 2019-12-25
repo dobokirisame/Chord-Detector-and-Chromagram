@@ -73,7 +73,7 @@ public:
     void setChromaCalculationInterval (int numSamples);
     
     /** @returns the chromagram vector */
-    std::vector<double> getChromagram();
+    std::vector<double> chromagram();
     
     /** @returns true if a new chromagram vector has been calculated at the current iteration. This should
      * be called after processAudioFrame
@@ -85,14 +85,12 @@ private:
     void setupFFT();
     void calculateChromagram();
     void calculateMagnitudeSpectrum();
-	void downSampleFrame (std::vector<double> inputAudioFrame);
+    std::vector<double> &&downSampleFrame(std::vector<double> inputAudioFrame) const;
     void makeHammingWindow();
-    double round (double val);
-    
-    std::vector<double> window;
+private:
+    std::array<double, kBufferSize> mHammingWindow;
     std::vector<double> mBuffer;
-    std::vector<double> magnitudeSpectrum;
-    std::vector<double> downsampledInputAudioFrame;
+    std::vector<double> mMagnitudeSpectrum;
     std::vector<double> mChromagram;
     size_t mInputAudioFrameSize;
     size_t downSampledAudioFrameSize;
